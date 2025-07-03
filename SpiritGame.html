@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Spirits: Veil of the Forest – Prototyp v5.1</title>
+  <style>
+  body, html {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.container {
+  width: 100%;
+  max-width: 960px;
+  margin: 40px auto;
+  background: #384048;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 8px 32px #0008;
+  overflow: visible;
+}
+
+.zone {
+  box-sizing: border-box;
+  max-width: 880px;
+  margin: 30px auto 64px auto;
+  border-radius: 14px;
+  padding: 18px 20px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  overflow: hidden;         /* <- Achte darauf, dass overflow: hidden gesetzt ist! */
+  position: relative;       /* <- Neu! */
+  z-index: 1;
+}
+.zone.active {
+  border-color: #ffde59;
+  background: #22292c;
+  box-shadow: 0 0 18px #ffde59bb;
+  z-index: 10;    /* <- Neu! */
+}
+.zone:not(.active) {
+  z-index: 1;
+}
+.row-table {
+  display: flex;
+  flex-direction: row;
+  gap: 18px;
+  flex-wrap: wrap;   /* <- Neu: Buttons umbrechen */
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+.column {
+  min-width: 170px;
+  max-width: 200px;
+  flex: 1 1 0;
+  box-sizing: border-box;
+}
+    body { font-family: sans-serif; background: #23292d; color: #f3f3f3; margin: 0; padding: 0; }
+   .container {
+  max-width: 960px;
+  margin: 40px auto;
+  background: #384048;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 8px 32px #0008;
+  overflow: hidden;   /* HINZUGEFÜGT */
+}
+    .zone.active { border-color: #ffde59; background: #22292c; box-shadow: 0 0 18px #ffde59bb; }
+    .zone.out { opacity: .55; filter: grayscale(85%); }
+    .zone .who { font-size: 1.13em; font-weight: bold; letter-spacing: .04em;}
+    .token { display: inline-block; margin: 0 4px; width: 28px; height: 28px; border-radius: 50%; background: #9ce; color: #234; text-align: center; line-height: 28px; font-weight: bold; font-size: 1.2em;}
+    .row-table { display: flex; flex-direction: row; gap: 18px; }
+    .column { display: flex; flex-direction: column; gap: 7px; align-items: center;}
+    .card, .handcard { background: #fff2; border-radius: 9px; box-shadow: 0 2px 8px #0006; padding: 8px 14px; min-width: 80px; text-align: center; font-size: 1.08em; position: relative;}
+    .handcard { background: #7ca5ea44; cursor: pointer; border: 2px solid #345; min-width: 135px;}
+    .card.revealed { background: #fbcf52bb; color: #333; }
+    .card.special { border: 2px dashed #e58; }
+    .def-row { margin-bottom: 2px;}
+    .card.def { background: #a5eabc44; color: #235; border: 2px solid #82c477; min-width: 115px; min-height:38px;}
+    .card.def.revealed { background: #c7fff2cc; color: #111;}
+    .card.def.illusion { background: #eee9f5bb;}
+    .card.totem { border: 2px solid #eec404; background: #ffe17580;}
+    .spirit-row { margin-top:0;}
+    .spirit-label { font-size: .96em; color: #fbcf52; margin-bottom: 2px;}
+    .def-label { font-size: .96em; color: #84f7f7; margin-bottom: 2px;}
+    button { margin: 6px 8px 6px 0; padding: 8px 15px; border-radius: 6px; border: none; background: #2e8dd8; color: #fff; font-size: 1em; cursor: pointer;}
+    button[disabled] { background: #666a; cursor: not-allowed;}
+    .log { font-size: 1em; margin-top: 14px; background: #2b3338; border-radius: 6px; padding: 10px 14px; min-height: 38px;}
+    .hidden { opacity: 0.22; filter: blur(2.4px);}
+    .alert { color: #ffdb59; font-weight: bold; font-size: 1.13em;}
+    .special-action { background: #fe7 !important; color: #130 !important; border: 2px solid #fb0 !important;}
+    .mustpeektxt { color: #fe4; font-size: .97em; margin-left: 8px;}
+    .selected { outline: 3px solid #f52;}
+    .actionprompt { font-size:1.08em;color:#d5e91c;text-align:center;padding:14px 0 7px 0;}
+    .disabled-all * { pointer-events: none !important; opacity:0.55; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌀 Spirits: Veil of the Forest <br><span style="font-size:0.7em;color:#ffe">Prototyp v5.1 (kein Selbst-Peek, Clear Winds gefixt)</span></h1>
+    <div id="game"></div>
+    <div class="log" id="log"></div>
+  </div>
+  <script>
+    // === Datendefinitionen und Setup (wie gehabt)
+    const SPIRITS = [
+      { value: 2, name: "Spirit 2", special: false },
+      { value: 3, name: "Spirit 3", special: false },
+      { value: 4, name: "Spirit 4", special: false },
+      { value: 5, name: "Spirit 5", special: false },
+      { value: 6, name: "Spirit 6", special: false },
+      { value: 7, name: "Spirit 7", special: false },
+      { value: 8, name: "Spirit 8", special: false },
+      { value: 9, name: "Spirit 9", special: false },
+      { value: 10, name: "Spirit 10", special: false },
+      { value: 7, name: "Spiegelsprit", special: "mirror" },
+      { value: 7, name: "Fäulnisspirit", special: "decay" },
+      { value: 7, name: "Sonnenspirit", special: "sun" }
+    ];
+    const SPIRIT_COUNTS = {2:2, 3:2, 4:2, 5:2, 6:2, 7:2, 8:1, 9:1, 10:1};
+    function generateSpiritsDeck() {
+      let deck = [];
+      for(let s of SPIRITS) {
+        if(s.special) deck.push({...s});
+        else for(let i=0;i<(SPIRIT_COUNTS[s.value]||1);i++) deck.push({...s});
+      }
+      return deck;
+    }
+    const DEF_CARDS = [
+      { id:1, name:"Forest Coat", qty:6, type:'def' },
+      { id:2, name:"Fog Cage", qty:4, type:'def' },
+      { id:3, name:"Mirror Trap", qty:4, type:'def' },
+      { id:4, name:"Illusion (Dust Cloak)", qty:4, type:'def' },
+      { id:5, name:"Spirit Totem", qty:4, type:'def' },
+      { id:6, name:"Moonlight Blessing", qty:4, type:'def' },
+      { id:7, name:"Shadow Drift", qty:3, type:'action' },
+      { id:8, name:"Possessing Wisp", qty:3, type:'action' },
+      { id:9, name:"Torch", qty:4, type:'action' },
+      { id:10, name:"Clear Winds", qty:4, type:'action' }
+    ];
+    function generateDefDeck() {
+      let deck = [];
+      for(let c of DEF_CARDS) for(let i=0;i<c.qty;i++) deck.push({...c});
+      return deck;
+    }
+    function shuffle(arr) {
+      for(let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+    let state = {
+      players: [
+        { name: "Spieler 1", spirits: [], defenses: [[],[],[],[]], hand: [], energy: 3, out: false, mustPeekTotem: null, revealedDef: [false,false,false,false], fogCageTimer: [0,0,0,0] },
+        { name: "Spieler 2", spirits: [], defenses: [[],[],[],[]], hand: [], energy: 3, out: false, mustPeekTotem: null, revealedDef: [false,false,false,false], fogCageTimer: [0,0,0,0] }
+      ],
+      spiritDeck: [],
+      defDeck: [],
+      discardPile: [],
+      currentPlayer: 0,
+      actualCurrent: 0, // Reflex-Aktionen (Spiegel/Mirror Trap)
+      peeked: [ [false,false,false,false], [false,false,false,false] ],
+      revealed: [ [false,false,false,false], [false,false,false,false] ],
+      log: "Spiel gestartet!",
+      winner: null,
+      mirrorTrapPending: null,
+      shadowDriftPending: null,
+      moonlightPending: null,
+      clearWindsTarget: null, // {opponent, slot}
+      possessingStep: null,
+      spiegelPending: null,
+      totemBlock: false
+    };
+    function setupGame() {
+      state.spiritDeck = generateSpiritsDeck(); shuffle(state.spiritDeck);
+      state.defDeck = generateDefDeck(); shuffle(state.defDeck);
+      for(let p=0;p<2;p++) {
+        state.players[p].spirits = [];
+        state.players[p].defenses = [[],[],[],[]];
+        state.players[p].hand = [];
+        state.players[p].energy = 3;
+        state.players[p].out = false;
+        state.players[p].mustPeekTotem = null;
+        state.players[p].revealedDef = [false,false,false,false];
+        state.players[p].fogCageTimer = [0,0,0,0];
+        state.peeked[p]=[false,false,false,false];
+        state.revealed[p]=[false,false,false,false];
+        for(let i=0;i<4;i++) state.players[p].spirits.push(state.spiritDeck.pop());
+        for(let i=0;i<3;i++) state.players[p].hand.push(state.defDeck.pop());
+      }
+      state.discardPile = [];
+      state.currentPlayer = 0;
+      state.actualCurrent = 0;
+      state.winner = null;
+      state.log = "Spiel gestartet!";
+      state.mirrorTrapPending = null;
+      state.shadowDriftPending = null;
+      state.moonlightPending = null;
+      state.clearWindsTarget = null;
+      state.possessingStep = null;
+      state.spiegelPending = null;
+      state.totemBlock = false;
+      render();
+    }
+    function isReflexMode() {
+      return !!state.mirrorTrapPending || !!state.spiegelPending;
+    }
+    function getActivePlayer() {
+      return isReflexMode() ? state.actualCurrent : state.currentPlayer;
+    }
+    function isTotemBlock() {
+      let cp = state.currentPlayer;
+      let must = state.players[cp].mustPeekTotem;
+      if(must===null) return false;
+      let opp = (cp+1)%2;
+      let defStack = state.players[opp].defenses[must];
+      let totemIdx = defStack.findIndex(x=>x.name=="Spirit Totem");
+      let otherDef = defStack.find((x,i)=>x.name!="Spirit Totem"&&i!=totemIdx);
+      if(otherDef && !state.players[opp].revealedDef[must]) return true;
+      if(!otherDef) return true;
+      return false;
+    }
+    function canPeekDefSlot(p,s) {
+      let cp = state.currentPlayer;
+      if(isTotemBlock() && (p!=(cp+1)%2 || s!=state.players[cp].mustPeekTotem)) return false;
+      return state.players[p].defenses[s].find(x=>x.name!="Spirit Totem") && !state.players[p].revealedDef[s];
+    }
+    function canPeekSpiritSlot(p,s) {
+      let cp = state.currentPlayer;
+      if(isTotemBlock() && (p!=(cp+1)%2 || s!=state.players[cp].mustPeekTotem)) return false;
+      let defStack = state.players[p].defenses[s];
+      let totemIdx = defStack.findIndex(x=>x.name=="Spirit Totem");
+      let otherDef = defStack.find((x,i)=>x.name!="Spirit Totem"&&i!=totemIdx);
+      let fogCageActive = otherDef && otherDef.name=="Fog Cage" && state.players[p].fogCageTimer[s]>0;
+      let forestCoatActive = otherDef && otherDef.name=="Forest Coat";
+      if((otherDef && !state.players[p].revealedDef[s] && !(state.clearWindsTarget && state.clearWindsTarget.opponent===p && state.clearWindsTarget.slot===s)) || fogCageActive || forestCoatActive) return false;
+      return true;
+    }
+    function canRevealSpiritSlot(p,s) {
+      let cp = state.currentPlayer;
+      if(isTotemBlock() && (p!=(cp+1)%2 || s!=state.players[cp].mustPeekTotem)) return false;
+      if(!state.peeked[p][s]) return false;
+      let defStack = state.players[p].defenses[s];
+      let totemIdx = defStack.findIndex(x=>x.name=="Spirit Totem");
+      let otherDef = defStack.find((x,i)=>x.name!="Spirit Totem"&&i!=totemIdx);
+      let fogCageActive = otherDef && otherDef.name=="Fog Cage" && state.players[p].fogCageTimer[s]>0;
+      let forestCoatActive = otherDef && otherDef.name=="Forest Coat";
+      if((otherDef && !state.players[p].revealedDef[s] && !(state.clearWindsTarget && state.clearWindsTarget.opponent===p && state.clearWindsTarget.slot===s)) || fogCageActive || forestCoatActive) return false;
+      return true;
+    }
+    // ==== Rendering
+    function render() {
+      let html = "";
+      let ap = getActivePlayer();
+	  let reflexUI = !!(state.mirrorTrapPending || state.spiegelPending);
+      let showActive = (p) => {
+    // Rahmen nur bei "ap" UND nur wenn kein Reflexprompt ODER Reflexprompt und ap==actualCurrent!
+      return (ap==p && !state.players[p].out && !state.winner);
+	};
+      let totemBlocked = isTotemBlock();
+      let blockClass = (totemBlocked && !isReflexMode()) ? "disabled-all" : "";
+      let opponent = ap === 0 ? 1 : 0;
+      for(let p=0;p<2;p++) {
+        let player = state.players[p];
+        let zoneActive = showActive(p) ? " active" : "";
+		let zoneClass = "zone"+zoneActive+(player.out?" out":"");
+		html += `<div class="${zoneClass} ${blockClass && ap==p ? blockClass : ""}">`;
+        html += `<span class="who">${player.name}</span>`;
+        if(ap==p && !player.out && !state.winner) html+=` <span class="alert">(am Zug)</span>`;
+        html += (player.out ? "❌ <b>AUSGESCHIEDEN</b> " : "");
+        html += `<span class="token">${player.energy}</span> Energie`;
+        if(player.mustPeekTotem!=null && !player.out && state.currentPlayer==p) html += `<span class="mustpeektxt">Totem-Zwangspeek: zuerst auf Slot ${player.mustPeekTotem+1}</span>`;
+        html += `<div class="row-table">`;
+        for(let s=0;s<4;s++) {
+          html += `<div class="column">`;
+          html += `<div class="def-row def-label">Verteidigung</div>`;
+          let defenseStack = player.defenses[s];
+          let isTotem = defenseStack.find(x=>x.name=="Spirit Totem");
+          let showTotem = !!isTotem;
+          let showDef = player.revealedDef[s] || (ap==p);
+          if(defenseStack.length>0) {
+            for(let d=0;d<defenseStack.length;d++) {
+              let def = defenseStack[d];
+              let classes = "card def";
+              if(def.name=="Spirit Totem") classes += " totem";
+              if(def.name=="Illusion (Dust Cloak)") classes += " illusion";
+              if(showDef || def.name=="Spirit Totem") classes+=" revealed";
+              html += `<div class="${classes}">${(showDef||def.name=="Spirit Totem")?def.name:"Verdeckt"}</div>`;
+            }
+          } else {
+            html += `<div class="card def hidden"></div>`;
+          }
+          // Spirit
+          html += `<div class="spirit-row spirit-label">Spirit</div>`;
+          let spirit = player.spirits[s];
+          let reveal = state.revealed[p][s];
+          let isSpecial = !!spirit.special;
+          let classes = "card";
+          if(reveal) classes += " revealed";
+          if(isSpecial) classes += " special";
+          html += `<div class="${classes}" style="position:relative;">`;
+          if(reveal || ap===p) {
+            html += `<b>${spirit.name}</b> <br><span style="font-size:0.92em">${isSpecial?"(Spezial)":"Wert: "+spirit.value}</span>`;
+            if(isSpecial) html += `<br><span style="color:#ea4">[${spirit.special=="mirror"?"Spiegel":spirit.special=="decay"?"Fäulnis":"Sonne"}]</span>`;
+          } else {
+            html += `<span style="opacity:.7">?</span>`;
+          }
+          // === Peek/Reveal-Buttons NUR beim Gegner anzeigen ===
+          if(p === opponent && !state.revealed[p][s] && !player.out && !state.winner &&
+            !state.mirrorTrapPending && !state.shadowDriftPending && !state.moonlightPending && !state.clearWindsTarget && !state.possessingStep && !state.spiegelPending
+            ) {
+            let cp = state.currentPlayer;
+            let disable = false;
+            if(totemBlocked) {
+              let must = state.players[cp].mustPeekTotem;
+              disable = (p!=(cp+1)%2 || s!=must);
+            }
+            if(canPeekDefSlot(p,s)) html += `<br><button onclick="peekDef(${p},${s})" ${disable?"disabled":""}>Peek Verteidigung</button>`;
+            if(canPeekSpiritSlot(p,s)) html += `<br><button onclick="peekSpirit(${p},${s})" ${disable?"disabled":""}>Peek Spirit</button>`;
+            if(canRevealSpiritSlot(p,s)) html += `<br><button onclick="revealSpirit(${p},${s})" ${disable?"disabled":""}>Reveal</button>`;
+          }
+          // === Clear Winds Speziallogik: Nur auf Zielslot erlauben ===
+          if (state.clearWindsTarget && p === state.clearWindsTarget.opponent && s === state.clearWindsTarget.slot) {
+            if (!state.revealed[p][s]) {
+              html += `<br><button onclick="clearWindsPeek(${p},${s})">Peek mit Clear Winds</button>`;
+              if (state.peeked[p][s]) {
+                html += `<br><button onclick="clearWindsReveal(${p},${s})">Reveal mit Clear Winds</button>`;
+              }
+            }
+          }
+          html += `</div></div>`;
+        }
+        html += `</div>`;
+        if(ap===p && !player.out && !state.winner && !state.mirrorTrapPending && !state.shadowDriftPending && !state.moonlightPending && !state.clearWindsTarget && !state.possessingStep && !state.spiegelPending) {
+          html += `<div>Handkarten: <div class="cards">`;
+          for(let h=0;h<player.hand.length;h++) {
+            let hc = player.hand[h];
+            let sel = (state.selectedHand===h) ? "selected" : "";
+            let disable = totemBlocked;
+            html+=`<div class="handcard ${sel}" onclick="selectHand(${h})" ${disable?"style='opacity:0.5;pointer-events:none;'":""}>${hc.name}${hc.type==='action'?"<span style='color:#e8c;font-size:.9em;'>(Aktion)</span>":""}</div>`;
+          }
+          html += `</div>`;
+          html += `<button onclick="endTurn()" style="margin-left:0" ${totemBlocked?"disabled":""}>Zug beenden</button>
+          <button onclick="exchangeHand()" ${player.hand.length<3||player.energy<1||totemBlocked?"disabled":""}>Alle 3 tauschen (1💠)</button>`;
+        }
+        html += `</div>`;
+      }
+      // Spezialaktionen
+      if(state.mirrorTrapPending) {
+        let by = state.mirrorTrapPending.by, against = state.mirrorTrapPending.against;
+        state.actualCurrent = by;
+        html += `<div class="actionprompt"><b>${state.players[by].name}: Mirror Trap – Du darfst jetzt kostenlos einen gegnerischen Spirit <u>oder</u> eine gegnerische Verteidigung peeken.</b><br>`;
+        html += `Wähle Typ: 
+          <button onclick="mirrorPeekSel('spirit')">Spirit</button>
+          <button onclick="mirrorPeekSel('def')">Verteidigung</button></div>`;
+      }
+      if(state.spiegelPending) {
+        let by = state.spiegelPending.by, against = state.spiegelPending.against;
+        state.actualCurrent = by;
+        html += `<div class="actionprompt"><b>${state.players[by].name}: Spiegelsprit – Du darfst jetzt kostenlos einen gegnerischen Spirit <u>oder</u> eine gegnerische Verteidigung peeken.</b><br>`;
+        html += `Wähle Typ: 
+          <button onclick="spiegelPeekSel('spirit')">Spirit</button>
+          <button onclick="spiegelPeekSel('def')">Verteidigung</button></div>`;
+      }
+      if(state.shadowDriftPending!==null) {
+        let against = state.shadowDriftPending;
+        html += `<div class="actionprompt"><b>Shadow Drift wird ausgeführt: Verteidigungen von ${state.players[against].name} werden neu gemischt...</b><br><button onclick="doShadowDrift()">OK</button></div>`;
+      }
+      if(state.moonlightPending!==null) {
+        let p = state.moonlightPending;
+        let player = state.players[p];
+        let kannKarte = player.hand.length<3;
+        state.actualCurrent = p;
+        html += `<div class="actionprompt"><b>${player.name}: Moonlight Blessing/Sonnenspirit – Wähle Bonus:</b><br>`;
+        if(kannKarte) {
+          html += `<button onclick="moonlightBonus('draw')">Ziehe 1 Karte</button> <button onclick="moonlightBonus('energy')">+1 Energie</button></div>`;
+        } else {
+          html += `Du hast schon 3 Karten. Du erhältst automatisch +1 Energie.</div>`;
+        }
+      }
+      if(state.clearWindsTarget) {
+        let opp = state.clearWindsTarget.opponent;
+        let slot = state.clearWindsTarget.slot;
+        html += `<div class="actionprompt"><b>Clear Winds aktiviert!<br>Nutze Peek/Reveal auf dem gewählten Slot beim Gegner – andere Aktionen sind blockiert.</b></div>`;
+      }
+      if(state.possessingStep) {
+        let ps = state.possessingStep;
+        if(ps.phase==1) {
+          let opp = ps.to;
+          state.actualCurrent = ps.from;
+          html += `<div class="actionprompt"><b>Possessing Wisp: Wähle eine gegnerische Verteidigung, die du klauen willst:</b><br>`;
+          for(let i=0;i<4;i++) {
+            let def = state.players[opp].defenses[i][0];
+            if(def && def.name!="Spirit Totem") {
+              html += `<button onclick="possessStep1(${i})">${def.name} (Slot ${i+1})</button> `;
+            }
+          }
+          html += `</div>`;
+        }
+        if(ps.phase==2) {
+          let self = ps.from;
+          state.actualCurrent = ps.from;
+          html += `<div class="actionprompt"><b>Possessing Wisp: Wähle einen eigenen Spirit-Slot, auf den du die gestohlene Verteidigung legen willst:</b><br>`;
+          for(let i=0;i<4;i++) {
+            let d = state.players[self].defenses[i][0];
+            if(!d || d.name=="Spirit Totem") {
+              html += `<button onclick="possessStep2(${i})">Slot ${i+1}</button> `;
+            }
+          }
+          html += `</div>`;
+        }
+      }
+      if(state.winner!==null) {
+        html += `<div style="font-size:1.3em;color:#ffdb00; text-align:center; margin:20px 0"><b>${state.players[state.winner].name} hat gewonnen!</b><br><button onclick="setupGame()">Neustart</button></div>`;
+      }
+      if(isTotemBlock() && !isReflexMode()) {
+        state.log = "Totem-Zwangspeek: Du musst jetzt zuerst peeken, keine andere Aktion möglich.";
+      }
+      document.getElementById('game').innerHTML = html;
+      document.getElementById('log').innerHTML = state.log;
+    }
+
+    // ==== Aktionen & Effekte (unverändert bis auf Clear Winds + Peek/Reveal Einschränkung) ====
+
+    function peekDef(p,s) {
+      let ap = getActivePlayer();
+      if(state.players[p].defenses[s].length==0 || state.players[p].revealedDef[s]) return;
+      if(state.players[ap].energy<1 && !isReflexMode()) { state.log="Nicht genug Energie!"; render(); return; }
+      let def = state.players[p].defenses[s].find(x=>x.name!="Spirit Totem");
+      state.players[p].revealedDef[s]=true;
+      if(!isReflexMode()) state.players[ap].energy -= 1;
+      if(def && def.name=="Moonlight Blessing") {
+        state.players[p].defenses[s]=state.players[p].defenses[s].filter(x=>x.name!="Moonlight Blessing");
+        state.moonlightPending = p;
+        state.log = `${state.players[p].name} muss jetzt wählen: 1 Karte ziehen oder +1 Energie.`;
+        render(); return;
+      }
+      if(def && def.name=="Mirror Trap") {
+        state.players[p].defenses[s]=state.players[p].defenses[s].filter(x=>x.name!="Mirror Trap");
+        state.mirrorTrapPending={by:p,against:ap};
+        state.actualCurrent=p;
+        state.log = `Mirror Trap ausgelöst! ${state.players[p].name} darf eine gegnerische Karte peeken.`;
+        render(); return;
+      }
+      if(def && def.name=="Illusion (Dust Cloak)") {
+        state.players[p].defenses[s]=state.players[p].defenses[s].filter(x=>x.name!="Illusion (Dust Cloak)");
+        state.log = `Es war nur eine Illusion!`;
+        render(); return;
+      }
+      if(def && def.name=="Spirit Totem") {
+        state.log = "Spirit Totem ist immer offen.";
+        render(); return;
+      }
+      if(def && def.name=="Fog Cage") {
+        state.players[p].fogCageTimer[s]=1;
+        state.log = "Fog Cage: Du kannst diesen Spirit jetzt nicht peeken oder revealen!";
+        render(); return;
+      }
+      state.log = `Peek auf Verteidigung: ${def?def.name:"(Keine Verteidigung)"}`;
+      let cp = state.currentPlayer;
+      if(state.players[cp].mustPeekTotem===s && (p==(cp+1)%2)) {
+        state.players[cp].mustPeekTotem=null;
+      }
+      render();
+    }
+    function peekSpirit(p,s,fromReflex) {
+      let ap = getActivePlayer();
+      let defenseStack = state.players[p].defenses[s];
+      let totemIdx = defenseStack.findIndex(x=>x.name=="Spirit Totem");
+      let otherDef = defenseStack.find((x,i)=>x.name!="Spirit Totem"&&i!=totemIdx);
+      let fogCageActive = otherDef && otherDef.name=="Fog Cage" && state.players[p].fogCageTimer[s]>0;
+      let forestCoatActive = otherDef && otherDef.name=="Forest Coat";
+      if((otherDef && !state.players[p].revealedDef[s] && !(state.clearWindsTarget && state.clearWindsTarget.opponent===p && state.clearWindsTarget.slot===s)) || fogCageActive || forestCoatActive) {
+        state.log="Du musst zuerst die Verteidigung peeken oder entfernen!";
+        render(); return;
+      }
+      if(state.players[ap].energy<1 && !fromReflex) { state.log="Nicht genug Energie!"; render(); return; }
+      if(!fromReflex && !isReflexMode()) state.players[ap].energy -= 1;
+      state.peeked[p][s]=true;
+      let spirit = state.players[p].spirits[s];
+      state.log = `Peek auf ${state.players[p].name} Spirit ${s+1}: Wert ist <b>${spirit.value}</b>`;
+      let cp = state.currentPlayer;
+      if(state.players[cp].mustPeekTotem===s && (p==(cp+1)%2)) {
+        state.players[cp].mustPeekTotem=null;
+      }
+      render();
+    }
+    function revealSpirit(p,s,fromReflex) {
+      let ap = getActivePlayer();
+      let defenseStack = state.players[p].defenses[s];
+      let totemIdx = defenseStack.findIndex(x=>x.name=="Spirit Totem");
+      let otherDef = defenseStack.find((x,i)=>x.name!="Spirit Totem"&&i!=totemIdx);
+      let fogCageActive = otherDef && otherDef.name=="Fog Cage" && state.players[p].fogCageTimer[s]>0;
+      let forestCoatActive = otherDef && otherDef.name=="Forest Coat";
+      if((otherDef && !state.players[p].revealedDef[s] && !(state.clearWindsTarget && state.clearWindsTarget.opponent===p && state.clearWindsTarget.slot===s)) || fogCageActive || forestCoatActive) {
+        state.log="Du musst zuerst die Verteidigung peeken oder entfernen!";
+        render(); return;
+      }
+      if(!state.peeked[p][s]) { state.log="Du musst zuerst peeken!"; render(); return; }
+      if(state.players[ap].energy<2 && !fromReflex) { state.log="Nicht genug Energie!"; render(); return; }
+      if(!fromReflex && !isReflexMode()) state.players[ap].energy -= 2;
+      state.revealed[p][s]=true;
+      let spirit = state.players[p].spirits[s];
+      if(spirit.special=="mirror" && !fromReflex) {
+        state.spiegelPending={by:p,against:ap};
+        state.actualCurrent=p;
+        state.log="Spiegelsprit reflektiert den Reveal! Der Besitzer darf jetzt selbst einen gegnerischen Spirit oder Verteidigung peeken.";
+        render(); return;
+      }
+      if(spirit.special=="decay") {
+        if(state.players[ap].hand.length>0) {
+          let idx = Math.floor(Math.random()*state.players[ap].hand.length);
+          let card = state.players[ap].hand.splice(idx,1)[0];
+          state.log = `Fäulnisspirit-Effekt! Du verlierst "${card.name}"`;
+        } else state.log = "Fäulnisspirit-Effekt, aber keine Handkarten!";
+      }
+      if(spirit.special=="sun") {
+        state.moonlightPending=p;
+        state.actualCurrent=p;
+        state.log="Sonnenspirit aufgedeckt: Du darfst wählen!";
+        render(); return;
+      }
+      let cp = state.currentPlayer;
+      if(state.players[cp].mustPeekTotem===s && (p==(cp+1)%2)) {
+        state.players[cp].mustPeekTotem=null;
+      }
+      state.clearWindsTarget=null;
+      if(state.revealed[p].filter(x=>x).length==4) {
+        state.players[p].out = true;
+        if(state.players[(p+1)%2].out) {
+          state.log = "Beide Spieler ausgeschieden. Unentschieden!";
+          state.winner = null;
+        } else {
+          state.winner = (p+1)%2;
+        }
+      }
+      render();
+    }
+    // ========== NEU: Clear Winds-Spezial-Buttons ==========
+    function clearWindsPeek(p, s) {
+      let ap = getActivePlayer();
+      if(state.players[ap].energy<1) { state.log="Nicht genug Energie!"; render(); return; }
+      state.players[ap].energy -= 1;
+      state.peeked[p][s]=true;
+      state.log = `Peek mit Clear Winds auf Spirit ${s+1}: Wert ist <b>${state.players[p].spirits[s].value}</b>`;
+      render();
+    }
+    function clearWindsReveal(p, s) {
+      let ap = getActivePlayer();
+      if(state.players[ap].energy<2) { state.log="Nicht genug Energie!"; render(); return; }
+      state.players[ap].energy -= 2;
+      state.revealed[p][s]=true;
+      state.clearWindsTarget = null;
+      let spirit = state.players[p].spirits[s];
+      if(spirit.special=="mirror") {
+          state.spiegelPending={by:p,against:ap};
+          state.actualCurrent=p;
+          state.log="Spiegelsprit reflektiert den Reveal! Der Besitzer darf jetzt selbst einen gegnerischen Spirit oder Verteidigung peeken.";
+          render(); return;
+      }
+      if(spirit.special=="decay") {
+          if(state.players[ap].hand.length>0) {
+              let idx = Math.floor(Math.random()*state.players[ap].hand.length);
+              let card = state.players[ap].hand.splice(idx,1)[0];
+              state.log = `Fäulnisspirit-Effekt! Du verlierst "${card.name}"`;
+          } else state.log = "Fäulnisspirit-Effekt, aber keine Handkarten!";
+      }
+      if(spirit.special=="sun") {
+          state.moonlightPending=p;
+          state.actualCurrent=p;
+          state.log="Sonnenspirit aufgedeckt: Du darfst wählen!";
+          render(); return;
+      }
+      if(state.revealed[p].filter(x=>x).length==4) {
+          state.players[p].out = true;
+          if(state.players[(p+1)%2].out) {
+              state.log = "Beide Spieler ausgeschieden. Unentschieden!";
+              state.winner = null;
+          } else {
+              state.winner = (p+1)%2;
+          }
+      }
+      render();
+    }
+
+    // Der Rest der Aktionsfunktionen (unverändert)
+    function selectHand(hidx) {
+      let ap = getActivePlayer();
+      let card = state.players[ap].hand[hidx];
+      if(isTotemBlock()) { render(); return; }
+      if(card.type==='action') {
+        if(card.name=="Shadow Drift") {
+          state.players[ap].hand.splice(hidx,1);
+          state.shadowDriftPending = (ap+1)%2;
+          state.log="Shadow Drift gespielt: Klicke auf OK zum Mischen.";
+          render(); return;
+        }
+        if(card.name=="Torch") {
+          let opp = (ap+1)%2;
+          let slot = parseInt(prompt("Auf welchen gegnerischen Slot (1-4) willst du Torch spielen?"),10)-1;
+          if(slot<0||slot>3) { state.log="Ungültige Wahl."; render(); return; }
+          let def = state.players[opp].defenses[slot][0];
+          state.players[ap].energy -= 1;
+          state.players[ap].hand.splice(hidx,1);
+          if(def && def.name=="Forest Coat") {
+            state.players[opp].defenses[slot].splice(0,1);
+            state.log = `Torch gespielt! Forest Coat auf Slot ${slot+1} entfernt.`;
+          } else {
+            state.log = "Torch zeigt keine Wirkung.";
+          }
+          render(); return;
+        }
+        if(card.name=="Clear Winds") {
+          let opp = (ap+1)%2;
+          let slot = parseInt(prompt("Auf welchen gegnerischen Slot (1-4) willst du Clear Winds einsetzen?"),10)-1;
+          if(slot<0||slot>3) { state.log="Ungültige Wahl."; render(); return; }
+          state.clearWindsTarget={opponent:opp,slot:slot};
+          state.players[ap].hand.splice(hidx,1);
+          state.players[ap].energy -= 1;
+          state.log = `Clear Winds gespielt! Du kannst jetzt auf diesem Slot Verteidigung ignorieren (Peek/Reveal).`;
+          render(); return;
+        }
+        if(card.name=="Possessing Wisp") {
+          let opp = (ap+1)%2;
+          state.possessingStep={from:ap,to:opp,card:card,phase:1};
+          render(); return;
+        }
+        alert(card.name+" ist noch nicht als Aktion umsetzbar im Prototyp.");
+        return;
+      }
+      let own = parseInt(prompt("Auf welchen deiner Spirits willst du die Verteidigung anlegen? (1-4)"),10)-1;
+      if(own<0||own>3) { state.log="Ungültiger Slot."; render(); return; }
+      let defenseStack = state.players[ap].defenses[own];
+      let isTotem = card.name=="Spirit Totem";
+      let alreadyTotem = defenseStack.find(x=>x.name=="Spirit Totem");
+      let alreadyDef = defenseStack[0] && defenseStack[0].name!="Spirit Totem";
+      if(!isTotem && alreadyDef) { state.log="Es darf nur eine Verteidigung pro Spirit liegen (Totem kann zusätzlich)."; render(); return; }
+      if(isTotem && alreadyTotem) { state.log="Es darf nur ein Totem pro Slot liegen."; render(); return; }
+      defenseStack.push(card);
+      state.players[ap].hand.splice(hidx,1);
+      state.players[ap].energy -= 1;
+      state.log = `Karte "${card.name}" wurde auf Spirit ${own+1} gelegt.`;
+      if(isTotem) {
+        let opp = (ap+1)%2;
+        state.players[opp].mustPeekTotem=own;
+      }
+      render();
+    }
+    function endTurn() {
+      let cp = state.currentPlayer;
+      for(let i=0;i<4;i++) {
+        if(state.players[cp].fogCageTimer[i]>0) {
+          state.players[cp].fogCageTimer[i]--;
+          if(state.players[cp].fogCageTimer[i]==0) {
+            let stack = state.players[cp].defenses[i];
+            if(stack[0] && stack[0].name=="Fog Cage") stack.splice(0,1);
+            state.players[cp].revealedDef[i]=false;
+          }
+        }
+      }
+      state.players[cp].energy = Math.min(6, state.players[cp].energy+2);
+      while(state.players[cp].hand.length<3 && state.defDeck.length>0) {
+        state.players[cp].hand.push(state.defDeck.pop());
+      }
+      state.currentPlayer = (cp+1)%2;
+      state.actualCurrent = state.currentPlayer;
+      state.log = "Nächster Spieler ist am Zug.";
+      render();
+    }
+    function exchangeHand() {
+      let ap = getActivePlayer();
+      if(state.players[ap].hand.length<3 || state.players[ap].energy<1) { state.log = "Nicht möglich."; render(); return; }
+      state.players[ap].hand=[];
+      for(let i=0;i<3 && state.defDeck.length>0;i++) state.players[ap].hand.push(state.defDeck.pop());
+      state.players[ap].energy -= 1;
+      state.log = "Alle Handkarten getauscht.";
+      render();
+    }
+    function mirrorPeekSel(type) {
+      let by = state.mirrorTrapPending.by, against = state.mirrorTrapPending.against;
+      state.actualCurrent=by;
+      if(type=='spirit') {
+        let idx = parseInt(prompt("Welchen gegnerischen Spirit willst du peeken? (1-4)"),10)-1;
+        if(idx<0||idx>3) { state.log="Ungültiger Slot."; state.mirrorTrapPending=null; state.actualCurrent=state.currentPlayer; render(); return; }
+        peekSpirit(against,idx,true);
+      }
+      if(type=='def') {
+        let idx = parseInt(prompt("Verteidigung vor welchem gegnerischen Spirit? (1-4)"),10)-1;
+        if(idx<0||idx>3) { state.log="Ungültiger Slot."; state.mirrorTrapPending=null; state.actualCurrent=state.currentPlayer; render(); return; }
+        peekDef(against,idx);
+      }
+      state.mirrorTrapPending=null;
+      state.actualCurrent=state.currentPlayer;
+      render();
+    }
+    function spiegelPeekSel(type) {
+      let by = state.spiegelPending.by, against = state.spiegelPending.against;
+      state.actualCurrent=by;
+      if(type=='spirit') {
+        let idx = parseInt(prompt("Welchen gegnerischen Spirit willst du peeken? (1-4)"),10)-1;
+        if(idx<0||idx>3) { state.log="Ungültiger Slot."; state.spiegelPending=null; state.actualCurrent=state.currentPlayer; render(); return; }
+        peekSpirit(against,idx,true);
+      }
+      if(type=='def') {
+        let idx = parseInt(prompt("Verteidigung vor welchem gegnerischen Spirit? (1-4)"),10)-1;
+        if(idx<0||idx>3) { state.log="Ungültiger Slot."; state.spiegelPending=null; state.actualCurrent=state.currentPlayer; render(); return; }
+        peekDef(against,idx);
+      }
+      state.spiegelPending=null;
+      state.actualCurrent=state.currentPlayer;
+      render();
+    }
+    function doShadowDrift() {
+      let opp = state.shadowDriftPending;
+      let oppDef = state.players[opp].defenses;
+      let stacks = [];
+      for(let i=0;i<4;i++) {
+        if(oppDef[i][0] && oppDef[i][0].name!="Spirit Totem") stacks.push(oppDef[i].splice(0,1)[0]);
+      }
+      shuffle(stacks);
+      for(let i=0;i<4;i++) {
+        if((oppDef[i].length==0 || (oppDef[i][0]&&oppDef[i][0].name=="Spirit Totem")) && stacks.length>0) oppDef[i].unshift(stacks.pop());
+      }
+      state.shadowDriftPending = null;
+      state.log="Shadow Drift ausgeführt: Verteidigungen neu verteilt!";
+      render();
+    }
+    function moonlightBonus(type) {
+      let p = state.moonlightPending;
+      let player = state.players[p];
+      if(type=="draw" && player.hand.length<3 && state.defDeck.length>0) player.hand.push(state.defDeck.pop());
+      if(type=="energy" || player.hand.length>=3) player.energy = Math.min(6, player.energy+1);
+      state.moonlightPending=null;
+      state.actualCurrent=state.currentPlayer;
+      state.log="Bonus erhalten!";
+      render();
+    }
+    function possessStep1(idx) {
+      let ps = state.possessingStep;
+      let opp = ps.to;
+      let def = state.players[opp].defenses[idx][0];
+      if(!def || def.name=="Spirit Totem") { state.log="Ungültig."; render(); return; }
+      state.possessingStep.stolenDef = def;
+      state.players[opp].defenses[idx].splice(0,1);
+      state.possessingStep.phase=2;
+      render();
+    }
+    function possessStep2(idx) {
+      let ps = state.possessingStep;
+      let self = ps.from;
+      let defenseStack = state.players[self].defenses[idx];
+      let alreadyDef = defenseStack[0] && defenseStack[0].name!="Spirit Totem";
+      if(alreadyDef) { state.log="Slot schon belegt."; render(); return; }
+      defenseStack.unshift(ps.stolenDef);
+      state.players[self].energy -= 1;
+      let cardIdx = state.players[self].hand.findIndex(c=>c.name=="Possessing Wisp");
+      if(cardIdx>=0) state.players[self].hand.splice(cardIdx,1);
+      state.possessingStep=null;
+      render();
+    }
+    // === Expose Funktionen für HTML
+    window.setupGame = setupGame;
+    window.peekSpirit = peekSpirit;
+    window.revealSpirit = revealSpirit;
+    window.selectHand = selectHand;
+    window.endTurn = endTurn;
+    window.exchangeHand = exchangeHand;
+    window.mirrorPeekSel = mirrorPeekSel;
+    window.spiegelPeekSel = spiegelPeekSel;
+    window.doShadowDrift = doShadowDrift;
+    window.peekDef = peekDef;
+    window.moonlightBonus = moonlightBonus;
+    window.possessStep1 = possessStep1;
+    window.possessStep2 = possessStep2;
+    window.clearWindsPeek = clearWindsPeek;
+    window.clearWindsReveal = clearWindsReveal;
+  </script>
+  <script>
+    window.onload = setupGame;
+  </script>
+</body>
+</html>
