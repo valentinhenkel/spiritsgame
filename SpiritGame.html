@@ -416,7 +416,11 @@
         html += `<div style="font-size:1.3em;color:#ffdb00; text-align:center; margin:20px 0"><b>${state.players[state.winner].name} hat gewonnen!</b><br><button onclick="setupGame()">Neustart</button></div>`;
       }
       if(isTotemBlock() && !isReflexMode()) {
+        let cp = state.currentPlayer;
+        let opp = (cp+1)%2;
+        let slot = state.players[cp].mustPeekTotem;
         state.log = "Totem-Zwangspeek: Du musst jetzt zuerst peeken, keine andere Aktion möglich.";
+        html += `<div class="actionprompt"><b>Totem-Zwangspeek!</b><br>Peeke Slot ${slot+1} von ${state.players[opp].name}, um fortzufahren.</div>`;
       }
       document.getElementById('game').innerHTML = html;
       document.getElementById('log').innerHTML = state.log;
@@ -457,7 +461,7 @@
         render(); return;
       }
       if(def && def.name=="Fog Cage") {
-        state.players[p].fogCageTimer[s]=1;
+        state.players[p].fogCageTimer[s]=2; // Fog persists for one full turn
         state.log = "Fog Cage: Du kannst diesen Spirit jetzt nicht peeken oder revealen!";
         render(); return;
       }
@@ -653,13 +657,16 @@
     }
     function endTurn() {
       let cp = state.currentPlayer;
-      for(let i=0;i<4;i++) {
-        if(state.players[cp].fogCageTimer[i]>0) {
-          state.players[cp].fogCageTimer[i]--;
-          if(state.players[cp].fogCageTimer[i]==0) {
-            let stack = state.players[cp].defenses[i];
-            if(stack[0] && stack[0].name=="Fog Cage") stack.splice(0,1);
-            state.players[cp].revealedDef[i]=false;
+      // Reduce Fog Cage timers for all players
+      for(let p=0;p<2;p++) {
+        for(let i=0;i<4;i++) {
+          if(state.players[p].fogCageTimer[i]>0) {
+            state.players[p].fogCageTimer[i]--;
+            if(state.players[p].fogCageTimer[i]==0) {
+              let stack = state.players[p].defenses[i];
+              if(stack[0] && stack[0].name=="Fog Cage") stack.splice(0,1);
+              state.players[p].revealedDef[i]=false;
+            }
           }
         }
       }
