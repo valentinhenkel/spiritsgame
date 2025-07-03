@@ -470,6 +470,9 @@
       let cp = state.currentPlayer;
       if(state.players[cp].mustPeekTotem===s && (p==(cp+1)%2)) {
         state.players[cp].mustPeekTotem=null;
+        let stack = state.players[p].defenses[s];
+        let tIdx = stack.findIndex(x=>x.name=="Spirit Totem");
+        if(tIdx>=0) stack.splice(tIdx,1);
       }
       render();
     }
@@ -492,6 +495,9 @@
       let cp = state.currentPlayer;
       if(state.players[cp].mustPeekTotem===s && (p==(cp+1)%2)) {
         state.players[cp].mustPeekTotem=null;
+        let stack = state.players[p].defenses[s];
+        let tIdx = stack.findIndex(x=>x.name=="Spirit Totem");
+        if(tIdx>=0) stack.splice(tIdx,1);
       }
       render();
     }
@@ -533,6 +539,9 @@
       let cp = state.currentPlayer;
       if(state.players[cp].mustPeekTotem===s && (p==(cp+1)%2)) {
         state.players[cp].mustPeekTotem=null;
+        let stack = state.players[p].defenses[s];
+        let tIdx = stack.findIndex(x=>x.name=="Spirit Totem");
+        if(tIdx>=0) stack.splice(tIdx,1);
       }
       state.clearWindsTarget=null;
       if(state.revealed[p].filter(x=>x).length==4) {
@@ -666,7 +675,8 @@
             state.players[p].fogCageTimer[i]--;
             if(state.players[p].fogCageTimer[i]==0) {
               let stack = state.players[p].defenses[i];
-              if(stack[0] && stack[0].name=="Fog Cage") stack.splice(0,1);
+              let idx = stack.findIndex(x=>x.name=="Fog Cage");
+              if(idx>=0) stack.splice(idx,1);
               state.players[p].revealedDef[i]=false;
             }
           }
