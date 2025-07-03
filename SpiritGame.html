@@ -433,6 +433,7 @@
       if(!isReflexMode()) state.players[ap].energy -= 1;
       if(def && def.name=="Moonlight Blessing") {
         state.players[p].defenses[s]=state.players[p].defenses[s].filter(x=>x.name!="Moonlight Blessing");
+        state.players[p].revealedDef[s]=false;
         state.moonlightPending = p;
         state.log = `${state.players[p].name} muss jetzt wählen: 1 Karte ziehen oder +1 Energie.`;
         render(); return;
@@ -441,11 +442,13 @@
         state.players[p].defenses[s]=state.players[p].defenses[s].filter(x=>x.name!="Mirror Trap");
         state.mirrorTrapPending={by:p,against:ap};
         state.actualCurrent=p;
+        state.players[p].revealedDef[s]=false;
         state.log = `Mirror Trap ausgelöst! ${state.players[p].name} darf eine gegnerische Karte peeken.`;
         render(); return;
       }
       if(def && def.name=="Illusion (Dust Cloak)") {
         state.players[p].defenses[s]=state.players[p].defenses[s].filter(x=>x.name!="Illusion (Dust Cloak)");
+        state.players[p].revealedDef[s]=false;
         state.log = `Es war nur eine Illusion!`;
         render(); return;
       }
