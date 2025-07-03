@@ -344,6 +344,7 @@
           html += `</div>`;
           html += `<button onclick="endTurn()" style="margin-left:0" ${totemBlocked?"disabled":""}>Zug beenden</button>
           <button onclick="exchangeHand()" ${player.hand.length<3||player.energy<1||totemBlocked?"disabled":""}>Alle 3 tauschen (1💠)</button>`;
+          html += `</div>`;
         }
         html += `</div>`;
       }
