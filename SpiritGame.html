@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Spirits: Veil of the Forest – Prototyp v5.1</title>
+  <title>Spirits: Veil of the Forest – Prototyp v5.2</title>
   <style>
   body, html {
   width: 100%;
@@ -99,7 +99,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>🌀 Spirits: Veil of the Forest <br><span style="font-size:0.7em;color:#ffe">Prototyp v5.1 (kein Selbst-Peek, Clear Winds gefixt)</span></h1>
+    <h1>🌀 Spirits: Veil of the Forest <br><span style="font-size:0.7em;color:#ffe">Prototyp v5.2 (kein Selbst-Peek, Clear Winds gefixt)</span></h1>
     <div id="game"></div>
     <div class="log" id="log"></div>
   </div>
@@ -547,14 +547,15 @@
       render();
     }
     // ========== NEU: Clear Winds-Spezial-Buttons ==========
-    function clearWindsPeek(p, s) {
+   function clearWindsPeek(p, s) {
       let ap = getActivePlayer();
       if(state.players[ap].energy<1) { state.log="Nicht genug Energie!"; render(); return; }
       state.players[ap].energy -= 1;
       state.peeked[p][s]=true;
       state.log = `Peek mit Clear Winds auf Spirit ${s+1}: Wert ist <b>${state.players[p].spirits[s].value}</b>`;
+      state.clearWindsTarget = null;
       render();
-    }
+   }
     function clearWindsReveal(p, s) {
       let ap = getActivePlayer();
       if(state.players[ap].energy<2) { state.log="Nicht genug Energie!"; render(); return; }
