@@ -75,6 +75,7 @@
     .column { display: flex; flex-direction: column; gap: 7px; align-items: center;}
     .card, .handcard { background: #fff2; border-radius: 9px; box-shadow: 0 2px 8px #0006; padding: 8px 14px; min-width: 80px; text-align: center; font-size: 1.08em; position: relative;}
     .handcard { background: #7ca5ea44; cursor: pointer; border: 2px solid #345; min-width: 135px;}
+    .card img, .handcard img { width: 100%; border-radius: 6px; margin-bottom: 4px; display:block; }
     .card.revealed { background: #fbcf52bb; color: #333; }
     .card.special { border: 2px dashed #e58; }
     .def-row { margin-bottom: 2px;}
@@ -140,6 +141,37 @@
       { id:9, name:"Torch", qty:4, type:'action' },
       { id:10, name:"Clear Winds", qty:4, type:'action' }
     ];
+
+    const CARD_IMAGES = {
+      "Spirit 1": "Spirit 1.png",
+      "Spirit 2": "Spirit 2.png",
+      "Spirit 3": "Spirit 3.png",
+      "Spirit 4": "Spirit 4.png",
+      "Spirit 5": "Spirit 5.png",
+      "Spirit 6": "Spirit 6.png",
+      "Spirit 7": "Spirit 7.png",
+      "Spirit 8": "Spirit 8.png",
+      "Spirit 9": "Spirit 9.png",
+      "Spirit 10": "Spirit 10.png",
+      "Spiegelsprit": "Spiegelsprit.png",
+      "Fäulnisspirit": "Fäulnisspirit.png",
+      "Sonnenspirit": "Sonnenspirit.png",
+      "Forest Coat": "Forest Coat.png",
+      "Fog Cage": "Fog Cage.png",
+      "Mirror Trap": "Mirror Trap.png",
+      "Illusion (Dust Cloak)": "Illusion (Dust Cloak).png",
+      "Spirit Totem": "Spirit Totem.png",
+      "Moonlight Blessing": "Moonlight Blessing.png",
+      "Shadow Drift": "Shadow Drift.png",
+      "Possessing Wisp": "Possessing Wisp.png",
+      "Torch": "Torch.png",
+      "Clear Winds": "Clear Winds.png"
+    };
+
+    function imgTag(name) {
+      const src = CARD_IMAGES[name];
+      return src ? `<img src="${src}" alt="${name}">` : "";
+    }
     function generateDefDeck() {
       let deck = [];
       for(let c of DEF_CARDS) for(let i=0;i<c.qty;i++) deck.push({...c});
@@ -287,7 +319,13 @@
               if(def.name=="Spirit Totem") classes += " totem";
               if(def.name=="Illusion (Dust Cloak)") classes += " illusion";
               if(showDef || def.name=="Spirit Totem") classes+=" revealed";
-              html += `<div class="${classes}">${(showDef||def.name=="Spirit Totem")?def.name:"Verdeckt"}</div>`;
+              html += `<div class="${classes}">`;
+              if(showDef || def.name=="Spirit Totem") {
+                html += imgTag(def.name) + `<div>${def.name}</div>`;
+              } else {
+                html += "Verdeckt";
+              }
+              html += `</div>`;
             }
           } else {
             html += `<div class="card def hidden"></div>`;
@@ -302,8 +340,10 @@
           if(isSpecial) classes += " special";
           html += `<div class="${classes}" style="position:relative;">`;
           if(reveal || ap===p) {
-            html += `<b>${spirit.name}</b> <br><span style="font-size:0.92em">${isSpecial?"(Spezial)":"Wert: "+spirit.value}</span>`;
+            html += imgTag(spirit.name);
+            html += `<div><b>${spirit.name}</b> <br><span style="font-size:0.92em">${isSpecial?"(Spezial)":"Wert: "+spirit.value}</span>`;
             if(isSpecial) html += `<br><span style="color:#ea4">[${spirit.special=="mirror"?"Spiegel":spirit.special=="decay"?"Fäulnis":"Sonne"}]</span>`;
+            html += `</div>`;
           } else {
             html += `<span style="opacity:.7">?</span>`;
           }
@@ -339,7 +379,10 @@
             let hc = player.hand[h];
             let sel = (state.selectedHand===h) ? "selected" : "";
             let disable = totemBlocked;
-            html+=`<div class="handcard ${sel}" onclick="selectHand(${h})" ${disable?"style='opacity:0.5;pointer-events:none;'":""}>${hc.name}${hc.type==='action'?"<span style='color:#e8c;font-size:.9em;'>(Aktion)</span>":""}</div>`;
+            html+=`<div class="handcard ${sel}" onclick="selectHand(${h})" ${disable?"style='opacity:0.5;pointer-events:none;'":""}>`;
+            html+= imgTag(hc.name);
+            html+= `<div>${hc.name}${hc.type==='action'?"<span style='color:#e8c;font-size:.9em;'>(Aktion)</span>":""}</div>`;
+            html+=`</div>`;
           }
           html += `</div>`;
           html += `<button onclick="endTurn()" style="margin-left:0" ${totemBlocked?"disabled":""}>Zug beenden</button>
