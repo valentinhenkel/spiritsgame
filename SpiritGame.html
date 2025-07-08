@@ -132,7 +132,6 @@
     }
     const DEF_CARDS = [
       { id:1, name:"Forest Coat", qty:6, type:'def' },
-      { id:2, name:"Fog Cage", qty:4, type:'def' },
       { id:3, name:"Mirror Trap", qty:4, type:'def' },
       { id:4, name:"Illusion (Dust Cloak)", qty:4, type:'def' },
       { id:5, name:"Spirit Totem", qty:4, type:'def' },
@@ -158,7 +157,6 @@
       "Fäulnisspirit": "Fäulnisspirit.png",
       "Sonnenspirit": "Sonnenspirit.png",
       "Forest Coat": "Forest Coat.png",
-      "Fog Cage": "Fog Cage.png",
       "Mirror Trap": "Mirror Trap.png",
       "Illusion (Dust Cloak)": "Illusion (Dust Cloak).png",
       "Spirit Totem": "Spirit Totem.png",
@@ -186,8 +184,8 @@
     }
     let state = {
       players: [
-        { name: "Spieler 1", spirits: [], defenses: [[],[],[],[]], hand: [], energy: 3, out: false, mustPeekTotem: null, revealedDef: [false,false,false,false], fogCageTimer: [0,0,0,0] },
-        { name: "Spieler 2", spirits: [], defenses: [[],[],[],[]], hand: [], energy: 3, out: false, mustPeekTotem: null, revealedDef: [false,false,false,false], fogCageTimer: [0,0,0,0] }
+        { name: "Spieler 1", spirits: [], defenses: [[],[],[],[]], hand: [], energy: 3, out: false, mustPeekTotem: null, revealedDef: [false,false,false,false] },
+        { name: "Spieler 2", spirits: [], defenses: [[],[],[],[]], hand: [], energy: 3, out: false, mustPeekTotem: null, revealedDef: [false,false,false,false] }
       ],
       spiritDeck: [],
       defDeck: [],
@@ -217,7 +215,6 @@
         state.players[p].out = false;
         state.players[p].mustPeekTotem = null;
         state.players[p].revealedDef = [false,false,false,false];
-        state.players[p].fogCageTimer = [0,0,0,0];
         state.peeked[p]=[false,false,false,false];
         state.revealed[p]=[false,false,false,false];
         for(let i=0;i<4;i++) state.players[p].spirits.push(state.spiritDeck.pop());
@@ -266,9 +263,8 @@
       let defStack = state.players[p].defenses[s];
       let totemIdx = defStack.findIndex(x=>x.name=="Spirit Totem");
       let otherDef = defStack.find((x,i)=>x.name!="Spirit Totem"&&i!=totemIdx);
-      let fogCageActive = otherDef && otherDef.name=="Fog Cage" && state.players[p].fogCageTimer[s]>0;
       let forestCoatActive = otherDef && otherDef.name=="Forest Coat";
-      if((otherDef && !state.players[p].revealedDef[s] && !(state.clearWindsTarget && state.clearWindsTarget.opponent===p && state.clearWindsTarget.slot===s)) || fogCageActive || forestCoatActive) return false;
+      if((otherDef && !state.players[p].revealedDef[s] && !(state.clearWindsTarget && state.clearWindsTarget.opponent===p && state.clearWindsTarget.slot===s))  || forestCoatActive) return false;
       return true;
     }
     function canRevealSpiritSlot(p,s) {
@@ -278,9 +274,8 @@
       let defStack = state.players[p].defenses[s];
       let totemIdx = defStack.findIndex(x=>x.name=="Spirit Totem");
       let otherDef = defStack.find((x,i)=>x.name!="Spirit Totem"&&i!=totemIdx);
-      let fogCageActive = otherDef && otherDef.name=="Fog Cage" && state.players[p].fogCageTimer[s]>0;
       let forestCoatActive = otherDef && otherDef.name=="Forest Coat";
-      if((otherDef && !state.players[p].revealedDef[s] && !(state.clearWindsTarget && state.clearWindsTarget.opponent===p && state.clearWindsTarget.slot===s)) || fogCageActive || forestCoatActive) return false;
+      if((otherDef && !state.players[p].revealedDef[s] && !(state.clearWindsTarget && state.clearWindsTarget.opponent===p && state.clearWindsTarget.slot===s))  || forestCoatActive) return false;
       return true;
     }
     // ==== Rendering
@@ -505,9 +500,6 @@
         state.log = "Spirit Totem ist immer offen.";
         render(); return;
       }
-      if(def && def.name=="Fog Cage") {
-        state.players[p].fogCageTimer[s]=2; // Fog persists for one full turn
-        state.log = "Fog Cage: Du kannst diesen Spirit jetzt nicht peeken oder revealen!";
         render(); return;
       }
       state.log = `Peek auf Verteidigung: ${def?def.name:"(Keine Verteidigung)"}`;
@@ -525,9 +517,8 @@
       let defenseStack = state.players[p].defenses[s];
       let totemIdx = defenseStack.findIndex(x=>x.name=="Spirit Totem");
       let otherDef = defenseStack.find((x,i)=>x.name!="Spirit Totem"&&i!=totemIdx);
-      let fogCageActive = otherDef && otherDef.name=="Fog Cage" && state.players[p].fogCageTimer[s]>0;
       let forestCoatActive = otherDef && otherDef.name=="Forest Coat";
-      if((otherDef && !state.players[p].revealedDef[s] && !(state.clearWindsTarget && state.clearWindsTarget.opponent===p && state.clearWindsTarget.slot===s)) || fogCageActive || forestCoatActive) {
+      if((otherDef && !state.players[p].revealedDef[s] && !(state.clearWindsTarget && state.clearWindsTarget.opponent===p && state.clearWindsTarget.slot===s))  || forestCoatActive) {
         state.log="Du musst zuerst die Verteidigung peeken oder entfernen!";
         render(); return;
       }
@@ -550,9 +541,8 @@
       let defenseStack = state.players[p].defenses[s];
       let totemIdx = defenseStack.findIndex(x=>x.name=="Spirit Totem");
       let otherDef = defenseStack.find((x,i)=>x.name!="Spirit Totem"&&i!=totemIdx);
-      let fogCageActive = otherDef && otherDef.name=="Fog Cage" && state.players[p].fogCageTimer[s]>0;
       let forestCoatActive = otherDef && otherDef.name=="Forest Coat";
-      if((otherDef && !state.players[p].revealedDef[s] && !(state.clearWindsTarget && state.clearWindsTarget.opponent===p && state.clearWindsTarget.slot===s)) || fogCageActive || forestCoatActive) {
+      if((otherDef && !state.players[p].revealedDef[s] && !(state.clearWindsTarget && state.clearWindsTarget.opponent===p && state.clearWindsTarget.slot===s))  || forestCoatActive) {
         state.log="Du musst zuerst die Verteidigung peeken oder entfernen!";
         render(); return;
       }
@@ -712,22 +702,8 @@
     }
     function endTurn() {
       let cp = state.currentPlayer;
-      // Reduce Fog Cage timers for all players
-      for(let p=0;p<2;p++) {
-        for(let i=0;i<4;i++) {
-          if(state.players[p].fogCageTimer[i]>0) {
-            state.players[p].fogCageTimer[i]--;
-            if(state.players[p].fogCageTimer[i]==0) {
-              let stack = state.players[p].defenses[i];
-              let idx = stack.findIndex(x=>x.name=="Fog Cage");
-              if(idx>=0) stack.splice(idx,1);
-              state.players[p].revealedDef[i]=false;
-            }
-          }
-        }
-      }
       state.players[cp].energy = Math.min(6, state.players[cp].energy+2);
-      while(state.players[cp].hand.length<3 && state.defDeck.length>0) {
+      if(state.players[cp].hand.length < 3 && state.defDeck.length>0) {
         state.players[cp].hand.push(state.defDeck.pop());
       }
       state.currentPlayer = (cp+1)%2;
