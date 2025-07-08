@@ -500,8 +500,6 @@
         state.log = "Spirit Totem ist immer offen.";
         render(); return;
       }
-        render(); return;
-      }
       state.log = `Peek auf Verteidigung: ${def?def.name:"(Keine Verteidigung)"}`;
       let cp = state.currentPlayer;
       if(state.players[cp].mustPeekTotem===s && (p==(cp+1)%2)) {
